@@ -87,6 +87,15 @@ namespace KobnexaRoyal
             yaw += Input.GetAxis("Mouse X") * sensitivity;
             float mouseY = Input.GetAxis("Mouse Y") * sensitivity;
             pitch += InvertY ? mouseY : -mouseY;
+            // Gamepad right-stick orbit camera (only when the gamepad was
+            // used most recently - last-input switching, see ControllerInput).
+            if (ControllerInput.IsGamepadActive)
+            {
+                float stickSpeed = 150f * ControllerInput.ControllerSensitivity * Time.deltaTime;
+                yaw += ControllerInput.Camera.x * stickSpeed;
+                float stickY = ControllerInput.Camera.y * stickSpeed;
+                pitch += InvertY ? stickY : -stickY;
+            }
             pitch = Mathf.Clamp(pitch, -80f, 80f);
             Quaternion cameraRotation = Quaternion.Euler(pitch, yaw, 0f);
             Vector3 cameraForward = cameraRotation * Vector3.forward;
@@ -97,11 +106,16 @@ namespace KobnexaRoyal
             Vector3 right = yawRotation * Vector3.right;
             float inputX = Input.GetAxis("Horizontal");
             float inputZ = Input.GetAxis("Vertical");
+            if (ControllerInput.IsGamepadActive)
+            {
+                inputX = ControllerInput.Move.x;
+                inputZ = ControllerInput.Move.y;
+            }
             Vector3 wish = forward * inputZ + right * inputX;
             if (wish.sqrMagnitude > 1f) wish.Normalize();
 
-            bool sprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            bool crouching = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+            bool sprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) || ControllerInput.SprintHeld;
+            bool crouching = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || ControllerInput.CrouchHeld;
             float speed = sprinting ? SprintSpeed : MoveSpeed;
             if (crouching) speed *= 0.5f;
 
@@ -129,7 +143,7 @@ namespace KobnexaRoyal
             if (IsGrounded)
             {
                 if (verticalVelocity < 0f) verticalVelocity = -2f;
-                if (Input.GetKeyDown(KeyCode.Space))
+                if (Input.GetKeyDown(KeyCode.Space) || ControllerInput.JumpPressed)
                     verticalVelocity = Mathf.Sqrt(2f * GravityStrength * JumpHeight);
             }
             else

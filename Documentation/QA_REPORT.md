@@ -115,3 +115,40 @@ A Python verification pass over the project returned **ALL PASS**:
 - No compilation result, no Play-mode run, no screenshots from inside Unity.
 - No build/player export attempted.
 - No gameplay (Mission 02 scope).
+
+## Controller support pass (2026-10-24, static verification only)
+
+Gamepad support was added on top of the existing keyboard/mouse controls;
+nothing was removed. Full mapping: `Documentation/CONTROLS.md`.
+
+- Input layer: `Core/ControllerInput.cs` reads the Unity Input System
+  package (`com.unity.inputsystem` 1.14.0, added to `Packages/manifest.json`
+  and to the runtime asmdef) first and falls back to legacy Input Manager
+  joystick axes/buttons (`ProjectSettings/InputManager.asset` now defines
+  `JoyLeftX/Y`, `JoyRightX/Y`, `JoyTrigger`, `JoyDPadX/Y` plus the standard
+  axes). The Editor setup script `Editor/InputHandlerSetup.cs` sets the
+  Active Input Handler to Both (once per Editor session) so legacy and
+  Input System code coexist.
+- Wired in: `ThirdPersonPlayerController` (left stick move, right stick
+  camera, A jump, LB/LT sprint, left-stick-click crouch),
+  `RoyalBlaster` (Y weapon swap, RT fire, X reload, shot rumble, R keyboard
+  reload added for parity), `MeleeWeapon` (B melee when melee is active),
+  `PlayerInventory` (D-pad slots 1-4), `GameplayHUD` (Start/Back/P pause
+  panel with Resume and Quit-to-Lobby, timescale reset on destroy),
+  `LobbyUIManager` (D-pad/left-stick navigation, A confirm, B back,
+  EventSystem selection on panel/dialog open; Settings panel gains a
+  Controller Sensitivity slider and a Vibration toggle, saved and reset
+  with the other settings via `SettingsData.ControllerSensitivity`
+  (0.1-3.0) and `SettingsData.VibrationEnabled`).
+- Tests: `Tests/EditMode/ControllerInputTests.cs` adds 11 tests (deadzone
+  math incl. rescaling, last-input switching, weapon-mode toggle, mapping
+  labels, settings clamping/defaults). Total EditMode tests: 49.
+- Static re-verification after this pass: 45 C# scripts balanced;
+  JSON/asmdef files parse; scene script GUIDs still resolve (the only
+  unresolved GUID is Unity's built-in null GUID, as before); new
+  controller APIs cross-check against their definitions.
+- HONEST LIMITATION: controller code is implemented and compiles
+  statically, but **physical-controller play-testing is pending because
+  no gamepad is attached to this VM**. The mapping has not been verified
+  on real hardware. Editor compilation and Test Runner results are still
+  pending the Unity Editor install (in progress at time of writing).

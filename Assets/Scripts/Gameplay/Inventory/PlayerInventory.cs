@@ -19,6 +19,19 @@ namespace KobnexaRoyal
             if (Data == null) Data = new InventoryData();
         }
 
+        private void Update()
+        {
+            // Gamepad D-pad uses inventory slots 1-4:
+            // Up = slot 1, Right = slot 2, Down = slot 3, Left = slot 4.
+            // Only consumables (HealthPack / ShieldCell) do anything on use.
+            HealthComponent target = GetComponent<HealthComponent>();
+            if (target == null) return;
+            if (ControllerInput.DPadUpPressed) UseItem(0, target);
+            else if (ControllerInput.DPadRightPressed) UseItem(1, target);
+            else if (ControllerInput.DPadDownPressed) UseItem(2, target);
+            else if (ControllerInput.DPadLeftPressed) UseItem(3, target);
+        }
+
         public bool AddItem(InventoryItem item)
         {
             if (Data == null) Data = new InventoryData();

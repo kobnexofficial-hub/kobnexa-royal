@@ -36,7 +36,12 @@ namespace KobnexaRoyal
 
         private void Update()
         {
-            if (Input.GetMouseButton(0)) Fire();
+            // Gamepad: Y/Triangle swaps the active weapon, RT/R2 shoots,
+            // X/Square reloads (blaster only; melee uses the same buttons
+            // through MeleeWeapon when it is the active weapon).
+            if (ControllerInput.SwapPressed) WeaponMode.Toggle();
+            if (WeaponMode.IsBlaster && (Input.GetMouseButton(0) || ControllerInput.ShootHeld)) Fire();
+            if (WeaponMode.IsBlaster && (Input.GetKeyDown(KeyCode.R) || ControllerInput.ReloadPressed)) Reload();
         }
 
         public void Fire()
@@ -78,6 +83,7 @@ namespace KobnexaRoyal
             }
 
             if (AudioManager.Instance != null) AudioManager.Instance.PlayShot();
+            ControllerInput.Rumble(0.12f, 0.2f, 0.06f);
             if (AmmoInMag <= 0) Reload();
         }
 

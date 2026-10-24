@@ -17,7 +17,11 @@ namespace KobnexaRoyal
 
         private void Update()
         {
-            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.F)) Swing();
+            // Only the active weapon responds to input: Y/Triangle (handled in
+            // RoyalBlaster) swaps between blaster and melee. B/Circle swings
+            // when melee is active; mouse/F still work as before.
+            if (!WeaponMode.IsMelee) return;
+            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.F) || ControllerInput.MeleePressed) Swing();
         }
 
         public void Swing()

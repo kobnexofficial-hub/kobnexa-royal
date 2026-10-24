@@ -33,6 +33,8 @@ namespace KobnexaRoyal
         private Text killFeedText;
         private Text inventoryLabel;
         private readonly List<Button> slotButtons = new List<Button>();
+        private GameObject pauseRoot;
+        private bool isPaused;
         private string lastInventorySignature;
         private string lastTopCenter;
         private string lastAlive;
@@ -47,12 +49,18 @@ namespace KobnexaRoyal
             EnsureEventSystem();
             EnsureCanvas();
             BuildHud();
+            BuildPausePanel();
             ResolvePlayer();
             RefreshInventory(true);
         }
 
         private void Update()
         {
+            // Pause: Start/Menu on a gamepad, Back/View on a gamepad, or P.
+            if (ControllerInput.StartPressed || ControllerInput.BackPressed || Input.GetKeyDown(KeyCode.P))
+            {
+                TogglePause();
+            }
             if (playerObject == null)
             {
                 reResolveTimer += Time.deltaTime;
@@ -73,6 +81,54 @@ namespace KobnexaRoyal
         private void OnDestroy()
         {
             if (subscribedInventory != null) subscribedInventory.OnInventoryChanged -= RefreshInventoryFromEvent;
+            Time.timeScale = 1f;
+        }
+
+        private void BuildPausePanel()
+        {
+            pauseRoot = UIFactory.Panel(canvasTransform, "PausePanel", Vector2.zero, Vector2.one,
+                Vector2.zero, Vector2.zero, new Color(0.01f, 0.02f, 0.05f, 0.78f), false);
+            GameObject box = UIFactory.Panel(pauseRoot.transform, "PauseBox",
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                new Vector2(-360f, -190f), new Vector2(360f, 190f), RoyalColors.NavyPanel, true);
+            UIFactory.LabelIn(box.transform, "PauseTitle", "PAUSED", 36,
+                RoyalColors.RoyalGoldBright, TextAnchor.UpperCenter, true,
+                Vector2.zero, Vector2.one, new Vector2(24f, -70f), new Vector2(-24f, 0f));
+            UIFactory.LabelIn(box.transform, "PauseHint", "Start / P resumes. Controller: D-pad moves, A confirms.",
+                17, RoyalColors.TextMuted, TextAnchor.UpperCenter, false,
+                Vector2.zero, new Vector2(1f, 0.72f), new Vector2(32f, 70f), new Vector2(-32f, 0f));
+            Button resume = UIFactory.Button(box.transform, "PauseResume", "RESUME",
+                new Vector2(0.08f, 0.30f), new Vector2(0.92f, 0.48f),
+                Vector2.zero, Vector2.zero, RoyalColors.RoyalGold, 21);
+            UIFactory.SetButtonText(resume, "RESUME", new Color(0.08f, 0.06f, 0.01f, 1f));
+            resume.onClick.AddListener(TogglePause);
+            Button quit = UIFactory.Button(box.transform, "PauseQuitToLobby", "QUIT TO LOBBY",
+                new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.26f),
+                Vector2.zero, Vector2.zero, RoyalColors.NavyPanelLight, 21);
+            quit.onClick.AddListener(QuitToLobby);
+            pauseRoot.SetActive(false);
+        }
+
+        private void TogglePause()
+        {
+            isPaused = !isPaused;
+            Time.timeScale = isPaused ? 0f : 1f;
+            if (pauseRoot != null) pauseRoot.SetActive(isPaused);
+            if (isPaused && EventSystem.current != null)
+            {
+                Button resume = pauseRoot != null
+                    ? pauseRoot.GetComponentInChildren<Button>(true) : null;
+                if (resume != null) resume.Select();
+            }
+        }
+
+        private void QuitToLobby()
+        {
+            Time.timeScale = 1f;
+            isPaused = false;
+            SceneLoader loader = SceneLoader.Instance;
+            if (loader != null) loader.LoadScene("RoyalLobby");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("RoyalLobby");
         }
 
         // ---------------- construction ----------------

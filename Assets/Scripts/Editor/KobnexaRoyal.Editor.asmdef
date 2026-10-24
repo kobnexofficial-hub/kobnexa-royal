@@ -2,7 +2,8 @@
   "name": "KobnexaRoyal.Editor",
   "rootNamespace": "KobnexaRoyal.Editor",
   "references": [
-    "KobnexaRoyal"
+    "KobnexaRoyal",
+    "UnityEditor"
   ],
   "includePlatforms": [
     "Editor"

@@ -13,6 +13,8 @@ namespace KobnexaRoyal
         public bool Fullscreen = true;
         public float MouseSensitivity = 1.0f;
         public bool InvertY = false;
+        public float ControllerSensitivity = 1.0f;
+        public bool VibrationEnabled = true;
 
         public static readonly string[] QualityNames = new string[]
         {
@@ -28,6 +30,8 @@ namespace KobnexaRoyal
             if (QualityIndex > QualityNames.Length - 1) QualityIndex = QualityNames.Length - 1;
             if (MouseSensitivity < 0.1f) MouseSensitivity = 0.1f;
             if (MouseSensitivity > 3.0f) MouseSensitivity = 3.0f;
+            if (ControllerSensitivity < 0.1f) ControllerSensitivity = 0.1f;
+            if (ControllerSensitivity > 3.0f) ControllerSensitivity = 3.0f;
         }
 
         private static float Clamp01(float v)

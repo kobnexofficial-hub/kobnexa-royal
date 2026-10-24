@@ -44,6 +44,22 @@ only (invite friends from the list, ready-up) - there is **no** online
 matchmaking, account server, or real-money store anywhere, and the UI says
 so wherever it applies. PLAY never fakes a server connection.
 
+
+## Controls — keyboard/mouse + gamepad (PC)
+
+Full mapping: `Documentation/CONTROLS.md`. The game keeps keyboard/mouse
+support and adds a gamepad layer with automatic last-input switching
+(use a stick/button to hand control to the gamepad, use the keyboard or
+mouse to hand it back). Gamepad gameplay: left stick move, right stick
+camera, A/Cross jump, B/Circle melee, X/Square reload, Y/Triangle weapon
+swap, right trigger shoot, left bumper or left trigger sprint, left stick
+click crouch, D-pad = inventory slots 1-4, Start pause. In menus: D-pad /
+left stick moves between buttons, A confirms, B goes back. Lobby Settings
+adds Controller Sensitivity and a Controller Vibration toggle, saved like
+other settings. Controller code is implemented and tested for its pure
+parts, but physical-controller play-testing is pending (no gamepad is
+attached to the build machine).
+
 ## Quick start
 
 1. Install Unity Hub and Unity **6 LTS (6000.0.x)** with the URP template

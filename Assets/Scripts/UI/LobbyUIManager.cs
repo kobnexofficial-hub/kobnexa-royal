@@ -55,6 +55,14 @@ namespace KobnexaRoyal
         private Dropdown qualityDropdown;
         private Toggle fullscreenToggle, invertYToggle;
         private Text sensitivityValueText;
+        private Slider controllerSensitivitySlider;
+        private Text controllerSensitivityValueText;
+        private Toggle vibrationToggle;
+        private readonly List<Button> controllerButtons = new List<Button>();
+        private int controllerSelectedIndex = -1;
+        private Vector2 prevControllerStick;
+        private string lastNavId = "";
+        private bool lastDialogActive;
 
         private LobbyCharacterShowcase showcase;
 
@@ -126,6 +134,105 @@ namespace KobnexaRoyal
                 if (dialogRoot != null && dialogRoot.activeSelf) CloseDialog(false);
                 else GoBack();
             }
+            // Controller menu navigation: refresh the selectable-button list
+            // whenever the visible panel or dialog changes, then navigate it.
+            bool dialogActive = dialogRoot != null && dialogRoot.activeSelf;
+            if (dialogActive != lastDialogActive)
+            {
+                lastDialogActive = dialogActive;
+                RefreshControllerSelection();
+            }
+            else if (!dialogActive && nav.Current != lastNavId)
+            {
+                lastNavId = nav.Current;
+                RefreshControllerSelection();
+            }
+            HandleControllerNavigation();
+        }
+
+        private void HandleControllerNavigation()
+        {
+            EventSystem es = EventSystem.current;
+            if (es == null || controllerButtons.Count == 0) return;
+            // Keep the index in sync when the mouse changes the selection.
+            GameObject current = es.currentSelectedGameObject;
+            if (current != null)
+            {
+                for (int i = 0; i < controllerButtons.Count; i++)
+                {
+                    if (controllerButtons[i] != null && controllerButtons[i].gameObject == current) controllerSelectedIndex = i;
+                }
+            }
+            if (controllerSelectedIndex < 0 || controllerSelectedIndex >= controllerButtons.Count) controllerSelectedIndex = 0;
+            Button selected = controllerButtons[controllerSelectedIndex];
+            if (selected == null) return;
+
+            // A selected slider consumes left/right as value changes.
+            Slider slider = selected.GetComponent<Slider>();
+            if (slider != null)
+            {
+                if (ControllerInput.DPadLeftPressed) slider.value -= 0.1f;
+                else if (ControllerInput.DPadRightPressed) slider.value += 0.1f;
+            }
+            else
+            {
+                Vector2 stick = ControllerInput.Move;
+                bool stickUp = stick.y > 0.6f && prevControllerStick.y <= 0.6f;
+                bool stickDown = stick.y < -0.6f && prevControllerStick.y >= -0.6f;
+                bool stickLeft = stick.x < -0.6f && prevControllerStick.x >= -0.6f;
+                bool stickRight = stick.x > 0.6f && prevControllerStick.x <= 0.6f;
+                if (ControllerInput.DPadUpPressed || stickUp) MoveControllerSelection(-1);
+                else if (ControllerInput.DPadDownPressed || stickDown) MoveControllerSelection(1);
+                else if (ControllerInput.DPadLeftPressed || stickLeft) MoveControllerSelection(-1);
+                else if (ControllerInput.DPadRightPressed || stickRight) MoveControllerSelection(1);
+            }
+            prevControllerStick = ControllerInput.Move;
+
+            if (ControllerInput.JumpPressed)
+            {
+                Toggle toggle = selected.GetComponent<Toggle>();
+                Dropdown dropdown = selected.GetComponent<Dropdown>();
+                if (toggle != null) toggle.isOn = !toggle.isOn;
+                else if (dropdown != null) dropdown.Show();
+                else if (slider == null) selected.onClick.Invoke();
+            }
+            if (ControllerInput.BackPressed)
+            {
+                if (dialogRoot != null && dialogRoot.activeSelf) CloseDialog(false);
+                else GoBack();
+            }
+        }
+
+        private void MoveControllerSelection(int delta)
+        {
+            if (controllerButtons.Count == 0) return;
+            controllerSelectedIndex = (controllerSelectedIndex + delta + controllerButtons.Count) % controllerButtons.Count;
+            Button b = controllerButtons[controllerSelectedIndex];
+            if (b != null) b.Select();
+        }
+
+        private void RefreshControllerSelection()
+        {
+            controllerButtons.Clear();
+            GameObject root = null;
+            if (dialogRoot != null && dialogRoot.activeSelf) root = dialogRoot;
+            else if (homeRoot != null && homeRoot.activeSelf) root = homeRoot;
+            else
+            {
+                foreach (KeyValuePair<string, GameObject> kv in panels)
+                {
+                    if (kv.Value != null && kv.Value.activeSelf) { root = kv.Value; break; }
+                }
+            }
+            if (root == null) return;
+            Button[] found = root.GetComponentsInChildren<Button>(true);
+            for (int i = 0; i < found.Length; i++)
+            {
+                if (found[i] != null && found[i].gameObject.activeInHierarchy) controllerButtons.Add(found[i]);
+            }
+            if (controllerButtons.Count == 0) return;
+            controllerSelectedIndex = 0;
+            controllerButtons[0].Select();
         }
 
         private void EnsureEventSystem()
@@ -525,6 +632,11 @@ namespace KobnexaRoyal
 
             fullscreenToggle = UIFactory.Toggle(t, "FullscreenToggle", "Fullscreen", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(64f, -610f), new Vector2(360f, -562f), data.Fullscreen);
             invertYToggle = UIFactory.Toggle(t, "InvertYToggle", "Invert Y (look)", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(400f, -610f), new Vector2(760f, -562f), data.InvertY);
+            UIFactory.LabelIn(t, "SettingLabel_Controller", "Controller Sensitivity", 22, RoyalColors.TextWhite, TextAnchor.MiddleLeft, false, new Vector2(0f, 1f), Vector2.one, new Vector2(64f, -690f), new Vector2(360f, -638f));
+            controllerSensitivitySlider = UIFactory.Slider(t, "ControllerSensitivitySlider", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(380f, -682f), new Vector2(880f, -646f), (data.ControllerSensitivity - 0.1f) / 2.9f);
+            controllerSensitivityValueText = UIFactory.LabelIn(t, "ControllerSensitivityValue", data.ControllerSensitivity.ToString("0.0"), 22, RoyalColors.RoyalGoldBright, TextAnchor.MiddleLeft, true, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(896f, -690f), new Vector2(980f, -638f));
+            controllerSensitivitySlider.onValueChanged.AddListener(v => { if (controllerSensitivityValueText != null) controllerSensitivityValueText.text = (0.1f + v * 2.9f).ToString("0.0"); });
+            vibrationToggle = UIFactory.Toggle(t, "VibrationToggle", "Controller Vibration", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(64f, -770f), new Vector2(400f, -718f), data.VibrationEnabled);
 
             Button save = UIFactory.Button(t, "SaveSettings", "APPLY + SAVE", new Vector2(0f, 0f), Vector2.zero, new Vector2(64f, 48f), new Vector2(360f, 116f), RoyalColors.RoyalGold, 22);
             UIFactory.SetButtonText(save, "APPLY + SAVE", new Color(0.08f, 0.06f, 0.01f, 1f));
@@ -572,6 +684,8 @@ namespace KobnexaRoyal
             d.Fullscreen = fullscreenToggle.isOn;
             d.InvertY = invertYToggle.isOn;
             d.MouseSensitivity = 0.1f + sensitivitySlider.value * 2.9f;
+            d.ControllerSensitivity = 0.1f + controllerSensitivitySlider.value * 2.9f;
+            d.VibrationEnabled = vibrationToggle.isOn;
             d.Clamp();
             mgr.Apply();
             mgr.Save();
@@ -593,6 +707,8 @@ namespace KobnexaRoyal
             fullscreenToggle.isOn = d.Fullscreen;
             invertYToggle.isOn = d.InvertY;
             sensitivitySlider.value = (d.MouseSensitivity - 0.1f) / 2.9f;
+            controllerSensitivitySlider.value = (d.ControllerSensitivity - 0.1f) / 2.9f;
+            vibrationToggle.isOn = d.VibrationEnabled;
             SetStatus("Settings reset to defaults.");
         }
 
