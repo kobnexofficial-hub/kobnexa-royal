@@ -1,0 +1,13 @@
+{
+  "name": "KobnexaRoyal.Editor",
+  "rootNamespace": "KobnexaRoyal.Editor",
+  "references": [
+    "KobnexaRoyal"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "autoReferenced": true
+}

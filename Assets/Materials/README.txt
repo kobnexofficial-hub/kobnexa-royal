@@ -1,0 +1,1 @@
+Materials are generated at runtime by LobbyEnvironmentBuilder / LobbyCharacterShowcase (URP Lit with a Standard-shader fallback, royal palette from RoyalColors). Hand-authored .mat files for final art should be stored here.

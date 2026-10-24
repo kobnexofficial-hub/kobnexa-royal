@@ -1,0 +1,1 @@
+No audio files yet. AudioManager synthesizes fallback music/UI tones at runtime when no clips are assigned. Drop final .wav/.mp3 clips here and assign them on the AudioManager component (MusicClip / ClickClip / BackClip / ConfirmClip).

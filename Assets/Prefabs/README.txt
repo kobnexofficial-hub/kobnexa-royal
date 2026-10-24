@@ -1,0 +1,1 @@
+Prefabs are created at runtime in Mission 01 (the lobby environment, hero and UI are built procedurally by the scripts in Assets/Scripts). When final art arrives, convert the procedural hero/environment pieces into prefabs and store them here.
